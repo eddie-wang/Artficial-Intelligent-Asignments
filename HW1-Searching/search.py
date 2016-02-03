@@ -54,13 +54,13 @@ class Game:
 
     def move(self,player,i,j,res):
         ## can reduce code by using dict modify!!
-        print i,j,"wxg",res
+        ##print i,j,"wxg",res
         if player==self.firstPlayer:
-            self.firstPlayerValue=res[0]
-            self.secondPlayerValue=res[1]
+            self.firstPlayerValue=res[1]
+            self.secondPlayerValue=res[2]
         else:
-            self.secondPlayerValue=res[1]
-            self.firstPlayerValue=res[0]
+            self.secondPlayerValue=res[2]
+            self.firstPlayerValue=res[1]
         self.boardState[i][j]=player
 
         direction=[(0,1),(1,0),(-1,0),(0,-1)]
@@ -77,6 +77,7 @@ class Game:
             myplayer=self.secondPlayerValue
             opplayer=self.firstPlayerValue
         myplayer+=self.boardValue[pos_i][pos_j]
+        print "asdf" , myplayer
         direction=[(0,1),(1,0),(-1,0),(0,-1)]
         raid=[]
         for i in range(4):
@@ -110,8 +111,57 @@ class Game:
         else:
             self.move(player,i,j,evaResult)
     def minMax(self,player,cutoff):
-        pass
+        print self.firstPlayerValue ,self.secondPlayerValue
+        result=self.max_value(player,cutoff)
+        self.move(player,result[1],result[2],self.evaluation(player,result[1],result[2]))
+        ##print self.boardState
+    def max_value(self,player,cutoff):
 
+        if cutoff==0: 
+            return self.firstPlayerValue-self.secondPlayerValue 
+        v=float('-inf')
+        i,j=-1,-1
+        for row in range(5):
+            for col in range(5):
+                 if self.boardState[row][col]=='*':
+                    temp_state=[r[:] for r in self.boardState]
+                    temp_first=self.firstPlayerValue
+                    temp_second=self.secondPlayerValue
+                    self.move(player,row,col,self.evaluation(player,row,col))
+                    print "asdfas"
+                    print self.firstPlayerValue ,self.secondPlayerValue
+                    cur=self.min_value(self.opponent_player(player),cutoff-1)
+                    print row,col,v
+                    if cur>v:
+                        v=cur;i=row;j=col; 
+                    self.boardState=temp_state
+                    self.firstPlayerValue=temp_first
+                    self.secondPlayerValue=temp_second
+        return (v,i,j)
+    def min_value(self,player,cutoff):
+
+        if cutoff==0: 
+            return self.firstPlayerValue-self.secondPlayerValue
+        v=float('inf')
+        i,j=-1,-1
+        for row in range(5):
+            for col in range(5):
+                 if self.boardState[row][col]=='*':
+                    temp_state=[r[:] for r in self.boardState]
+                    temp_first=self.firstPlayerValue
+                    temp_second=self.secondPlayerValue
+                    self.move(player,row,col,self.evaluation(player,row,col))
+                    cur=self.max_value(self.opponent_player(player),cutoff-1)
+                    if cur<v:
+                        v=cur;i=row;j=col;
+                    self.boardState=temp_state
+                    self.firstPlayerValue=temp_first
+                    self.secondPlayerValue=temp_second
+                    print self.boardState
+        return (v,i,j)
+    def opponent_player(self,player):
+        if player==self.firstPlayer: return self.secondPlayer
+        else: return self.firstPlayer    
     def alphaPruning(self,player,cutoff):
         pass
 
