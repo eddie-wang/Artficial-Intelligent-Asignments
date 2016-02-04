@@ -1,3 +1,5 @@
+
+## what if minmax only have one available bit depth is 2
 import sys
 class Game:
 	def __init__(self,inputFile):
@@ -5,6 +7,7 @@ class Game:
 			self.initGame(f)
 		if self.task!=4:
 			self.nextState(self.firstPlayer,self.task,self.cutOff)
+			self.printState(self.nextStateOuput)
 		else:
 			self.play()
 	def initGame(self,file):
@@ -17,9 +20,11 @@ class Game:
 			self.secondPlayer="X" if self.firstPlayer=="O" else "O"
 			self.cutOff=int(file.readline().strip())
 			## outputfile
-			self.nextStateOuput=open("next_state.tx","w")
+			self.nextStateOuput=open("next_state.txt","w")
 			if self.task!=1:
 				self.traverseOut=open("traverse_log.txt","w")
+				self.traverseOut.write("Node Depth Value")
+				if self.task==3: self.traverseOut.write("Alpha Beta")
 		else:
 			self.firstPlayer=file.readline().strip()
 			self.firstAlg=int(file.readline().strip())
@@ -42,15 +47,17 @@ class Game:
 				elif v==self.secondPlayer:
 					self.secondPlayerValue+=self.boardValue[index][i]
 	def play(self):
+		##bug if end between tw0 lines  and no exit check algorithm alpha and minmax
 		while self.gameEnd==False:
 			self.nextState(self.firstPlayer,self.firstAlg,self.firstCutOff)
+			if self.gameEnd==True: return 
+			self.printState(self.traceOuput)
 			self.nextState(self.secondPlayer,self.secondAlg,self.secondCutOff)
-		print self.boardState,"asdf"
+			if self.gameEnd==True: return 
+			self.printState(self.traceOuput)
 	def  nextState(self,player,task,cutoff):
 		methodDict={1:self.greedyBFS,2:self.minMax,3:self.alphaPruning}
 		methodDict[task](player,cutoff)
-		self.printState()
-
 	def move(self,player,i,j,res):
 		## can reduce code by using dict modify!!
 		##print i,j,"wxg",res
@@ -106,7 +113,6 @@ class Game:
 				
 				if self.boardState[row][col]=='*':
 					evaResult= self.evaluation(player,row,col)
-					print evaResult
 					if evaResult[0]>maxEva:
 						maxEva=evaResult[0];i=row;j=col;result=evaResult;
 		if i==-1 and j==-1:
@@ -115,13 +121,18 @@ class Game:
 			self.move(player,i,j,evaResult)
 	def minMax(self,player,cutoff):
 		result=self.max_value(player,cutoff,0,'root',False,float('-inf'),float('inf'))
-		self.move(player,result[1],result[2],self.evaluation(player,result[1],result[2]))
-		print "root",0,self.firstPlayerValue-self.secondPlayerValue
+		if result[1]==-1 and result[2]==-1:
+			self.gameEnd=True
+		else: self.move(player,result[1],result[2],self.evaluation(player,result[1],result[2]))
 	def max_value(self,player,cutoff,depth,curpos,prune,a,b):
 		if depth==cutoff: 
-			print curpos,depth,self.firstPlayerValue,self.secondPlayerValue
-			if player==self.firstPlayer:return (self.firstPlayerValue-self.secondPlayerValue,-1,-1)
-			else:return (self.secondPlayerValue-self.firstPlayerValue,-1,-1)
+			if player==self.firstPlayer:
+
+				self.printTraverse(curpos,depth,self.firstPlayerValue-self.secondPlayerValue,a,b)
+				return (self.firstPlayerValue-self.secondPlayerValue,-1,-1)
+			else:
+				self.printTraverse(curpos,depth,-self.firstPlayerValue+self.secondPlayerValue,a,b)
+				return (self.secondPlayerValue-self.firstPlayerValue,-1,-1)
 		v=float('-inf')
 		i,j=-1,-1
 		for row in range(5):
@@ -130,7 +141,7 @@ class Game:
 					temp_state=[r[:] for r in self.boardState]
 					temp_first=self.firstPlayerValue
 					temp_second=self.secondPlayerValue
-					print curpos,depth,v
+					self.printTraverse(curpos,depth,v,a,b)
 					self.move(player,row,col,self.evaluation(player,row,col))
 					cur=self.min_value(self.opponent_player(player),cutoff,depth+1,self.pos(row,col),prune,a,b)
 					if cur[0]>v:
@@ -139,14 +150,20 @@ class Game:
 					self.firstPlayerValue=temp_first
 					self.secondPlayerValue=temp_second
 					if prune: 
-						if v>=b: return (v,i,j)
+						if v>=b:
+							self.printTraverse(curpos,depth,v,a,b)
+							return (v,i,j)
 						a=max(a,v)
+		self.printTraverse(curpos,depth,v,a,b)
 		return (v,i,j)
 	def min_value(self,player,cutoff,depth,curpos,prune,a,b):
 		if depth==cutoff:
-			print curpos,depth,self.firstPlayerValue,self.secondPlayerValue
-			if player==self.secondPlayer:return (self.firstPlayerValue-self.secondPlayerValue,-1,-1)
-			else:return (self.secondPlayerValue-self.firstPlayerValue,-1,-1)
+			if player==self.secondPlayer:
+				self.printTraverse(curpos,depth,self.firstPlayerValue-self.secondPlayerValue,a,b)	
+				return (self.firstPlayerValue-self.secondPlayerValue,-1,-1)
+			else:
+				self.printTraverse(curpos,depth,-self.firstPlayerValue+self.secondPlayerValue,a,b)
+				return (self.secondPlayerValue-self.firstPlayerValue,-1,-1)
 		v=float('inf')
 		i,j=-1,-1
 		for row in range(5):
@@ -155,7 +172,7 @@ class Game:
 					temp_state=[r[:] for r in self.boardState]
 					temp_first=self.firstPlayerValue
 					temp_second=self.secondPlayerValue
-					print curpos,depth,v
+					self.printTraverse(curpos,depth,v,a,b)
 					self.move(player,row,col,self.evaluation(player,row,col))
 					cur=self.max_value(self.opponent_player(player),cutoff,depth+1,self.pos(row,col),prune,a,b)
 					if cur[0]<v:
@@ -164,19 +181,30 @@ class Game:
 					self.firstPlayerValue=temp_first
 					self.secondPlayerValue=temp_second
 					if prune: 
-						if v<=a :return (v,i,j)
+						if v<=a :
+							self.printTraverse(curpos,depth,v,a,b)
+							return (v,i,j)
 						b=min(b,v)
+		self.printTraverse(curpos,depth,v,a,b)
 		return (v,i,j)
 	def opponent_player(self,player):
 		if player==self.firstPlayer: return self.secondPlayer
 		else: return self.firstPlayer    
 	def alphaPruning(self,player,cutoff):
 		result=self.max_value(player,cutoff,0,'root',True,float('-inf'),float('inf'))
-		self.move(player,result[1],result[2],self.evaluation(player,result[1],result[2]))
-	def printState(self):
-		print self.boardState
+		if result[1]==-1 and result[2]==-1:
+			self.gameEnd=True
+		else: self.move(player,result[1],result[2],self.evaluation(player,result[1],result[2]))
+	def printState(self,output):
+		output.write( "\n".join(["".join(line) for line in self.boardState]))
+		output.write("\n")
 	def pos(self,i,j):
 		return chr(ord('A')+j)+str(i+1)
+
+	def printTraverse(self,curpos,depth,v,a,b):
+		if self.task in [2,3]:
+			self.traverseOut.write("\n"+str(curpos)+" "+str(depth)+" "+str(v))
+			if self.task==3: self.traverseOut.write(" "+str(a)+" "+str(b))
 if __name__=='__main__':
 	if len(sys.argv)!=3 or sys.argv[1]!="-i":
 		print "input formate error"
