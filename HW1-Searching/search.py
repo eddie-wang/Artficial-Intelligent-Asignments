@@ -1,5 +1,6 @@
 
-## what if minmax only have one available bit depth is 2
+## what if minmax only have one available bit depth is 2 
+## can reduce code by using dict modify!!
 import sys
 class Game:
 	def __init__(self,inputFile):
@@ -8,23 +9,23 @@ class Game:
 		if self.task!=4:
 			self.nextState(self.firstPlayer,self.task,self.cutOff)
 			self.printState(self.nextStateOuput)
+			if self.task!=1:self.traverseOut.truncate(self.traverseOut.tell()-1)
 		else:
 			self.play()
+			self.traceOuput.truncate(self.traceOuput.tell()-1)
 	def initGame(self,file):
 		self.gameEnd=False
 		self.task=int(file.readline())
-		self.firstPlayerValue=0
-		self.secondPlayerValue=0
+		self.firstPlayerValue,self.secondPlayerValue=0,0
 		if self.task!=4:
 			self.firstPlayer=file.readline().strip()
 			self.secondPlayer="X" if self.firstPlayer=="O" else "O"
 			self.cutOff=int(file.readline().strip())
-			## outputfile
 			self.nextStateOuput=open("next_state.txt","w")
 			if self.task!=1:
 				self.traverseOut=open("traverse_log.txt","w")
-				self.traverseOut.write("Node Depth Value")
-				if self.task==3: self.traverseOut.write("Alpha Beta")
+				self.traverseOut.write("Node,Depth,Value")
+				if self.task==3: self.traverseOut.write(",Alpha,Beta")
 		else:
 			self.firstPlayer=file.readline().strip()
 			self.firstAlg=int(file.readline().strip())
@@ -59,8 +60,6 @@ class Game:
 		methodDict={1:self.greedyBFS,2:self.minMax,3:self.alphaPruning}
 		methodDict[task](player,cutoff)
 	def move(self,player,i,j,res):
-		## can reduce code by using dict modify!!
-		##print i,j,"wxg",res
 		if player==self.firstPlayer:
 			self.firstPlayerValue=res[1]
 			self.secondPlayerValue=res[2]
@@ -68,7 +67,6 @@ class Game:
 			self.secondPlayerValue=res[1]
 			self.firstPlayerValue=res[2]
 		self.boardState[i][j]=player
-
 		direction=[(0,1),(1,0),(-1,0),(0,-1)]
 
 		for d in res[3]:
@@ -93,18 +91,21 @@ class Game:
 					raid.append(i)
 		eva=myplayer-opplayer
 		return (eva,myplayer,opplayer,raid)
+
 	def canraid(self,player,i,j):
 		if i-1>=0 and self.boardState[i-1][j]==player: return True
 		if i+1<5 and self.boardState[i+1][j]==player: return True
 		if j-1>=0 and self.boardState[i][j-1]==player: return True
 		if j+1<5 and self.boardState[i][j+1]==player: return True
 		return False
+
 	def opponent(self,player,i,j):
 		if i>=0 and i<5 and j>=0 and j<5 and self.boardState[i][j]!="*" and self.boardState[i][j]!=player:
 			return True
 		return False
+
 	def greedyBFS(self,player,cutoff):
-		maxEva=-100000000
+		maxEva=float('-inf')
 		i=-1;j=-1;
 		result=()
 		evaResult=()
@@ -119,11 +120,13 @@ class Game:
 			self.gameEnd=True
 		else:
 			self.move(player,i,j,evaResult)
+
 	def minMax(self,player,cutoff):
 		result=self.max_value(player,cutoff,0,'root',False,float('-inf'),float('inf'))
 		if result[1]==-1 and result[2]==-1:
 			self.gameEnd=True
 		else: self.move(player,result[1],result[2],self.evaluation(player,result[1],result[2]))
+
 	def max_value(self,player,cutoff,depth,curpos,prune,a,b):
 		if depth==cutoff: 
 			if player==self.firstPlayer:
@@ -133,22 +136,18 @@ class Game:
 			else:
 				self.printTraverse(curpos,depth,-self.firstPlayerValue+self.secondPlayerValue,a,b)
 				return (self.secondPlayerValue-self.firstPlayerValue,-1,-1)
-		v=float('-inf')
-		i,j=-1,-1
+		i,j,v=-1,-1,float('-inf')
 		for row in range(5):
 			for col in range(5):
 				 if self.boardState[row][col]=='*':
 					temp_state=[r[:] for r in self.boardState]
-					temp_first=self.firstPlayerValue
-					temp_second=self.secondPlayerValue
+					temp_first,temp_second=self.firstPlayerValue,self.secondPlayerValue
 					self.printTraverse(curpos,depth,v,a,b)
 					self.move(player,row,col,self.evaluation(player,row,col))
 					cur=self.min_value(self.opponent_player(player),cutoff,depth+1,self.pos(row,col),prune,a,b)
 					if cur[0]>v:
 						v=cur[0];i=row;j=col; 
-					self.boardState=temp_state
-					self.firstPlayerValue=temp_first
-					self.secondPlayerValue=temp_second
+					self.boardState,self.firstPlayerValue,self.secondPlayerValue=temp_state,temp_first,temp_second
 					if prune: 
 						if v>=b:
 							self.printTraverse(curpos,depth,v,a,b)
@@ -177,9 +176,7 @@ class Game:
 					cur=self.max_value(self.opponent_player(player),cutoff,depth+1,self.pos(row,col),prune,a,b)
 					if cur[0]<v:
 						v=cur[0];i=row;j=col;
-					self.boardState=temp_state
-					self.firstPlayerValue=temp_first
-					self.secondPlayerValue=temp_second
+					self.boardState,self.firstPlayerValue,self.secondPlayerValue=temp_state,temp_first,temp_second
 					if prune: 
 						if v<=a :
 							self.printTraverse(curpos,depth,v,a,b)
@@ -200,11 +197,14 @@ class Game:
 		output.write("\n")
 	def pos(self,i,j):
 		return chr(ord('A')+j)+str(i+1)
-
 	def printTraverse(self,curpos,depth,v,a,b):
+		def printInf(s):
+			if 	s=="inf" :return "Infinity"
+			elif s=="-inf":return "-Infinity"
+			return s
 		if self.task in [2,3]:
-			self.traverseOut.write("\n"+str(curpos)+" "+str(depth)+" "+str(v))
-			if self.task==3: self.traverseOut.write(" "+str(a)+" "+str(b))
+			self.traverseOut.write("\n"+str(curpos)+","+str(depth)+","+printInf(str(v)))
+		if self.task==3: self.traverseOut.write(","+printInf(str(a))+","+printInf(str(b)))
 if __name__=='__main__':
 	if len(sys.argv)!=3 or sys.argv[1]!="-i":
 		print "input formate error"
