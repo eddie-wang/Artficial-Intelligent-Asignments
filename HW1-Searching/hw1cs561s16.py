@@ -6,7 +6,7 @@ class Game:
 		if self.task!=4:
 			self.nextState(self.firstPlayer,self.task,self.cutOff)
 			self.printState(self.nextStateOuput)
-			if self.task!=1:self.nextStateOuput.truncate(self.nextStateOuput.tell()-1)
+			self.nextStateOuput.truncate(self.nextStateOuput.tell()-1)
 		else:
 			self.play()
 			self.traceOuput.truncate(self.traceOuput.tell()-1)
