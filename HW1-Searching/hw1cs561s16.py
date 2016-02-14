@@ -82,11 +82,13 @@ class Game:
 		raid=[]
 		if self.canraid(player,pos_i,pos_j):
 			for i in range(4):
+				print i
 				if self.opponent(player,pos_i+direction[i][0],pos_j+direction[i][1]):
 					myplayer+=self.boardValue[pos_i+direction[i][0]][pos_j+direction[i][1]]
 					opplayer-=self.boardValue[pos_i+direction[i][0]][pos_j+direction[i][1]]
 					raid.append(i)
 		eva=myplayer-opplayer
+		print raid,eva,pos_i,pos_j
 		return (eva,myplayer,opplayer,raid)
 
 	def canraid(self,player,i,j):
@@ -113,10 +115,11 @@ class Game:
 					evaResult= self.evaluation(player,row,col)
 					if evaResult[0]>maxEva:
 						maxEva=evaResult[0];i=row;j=col;result=evaResult;
+		print evaResult
 		if i==-1 and j==-1:
 			self.gameEnd=True
 		else:
-			self.move(player,i,j,evaResult)
+			self.move(player,i,j,result)
 
 	def minMax(self,player,cutoff):
 		result=self.max_value(player,cutoff,0,'root',False,float('-inf'),float('inf'))
