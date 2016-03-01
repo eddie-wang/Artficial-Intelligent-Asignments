@@ -1,0 +1,146 @@
+ask 0 {'args': ['Jane', 'Shelly'], 'ops': 'Aunt'}
+{} wxh
+goal: {'args': ['Jane', 'Shelly'], 'ops': 'Aunt'}
+rhs {'args': ['a', 'n'], 'ops': 'Aunt'}
+lhs [{'args': ['a'], 'ops': '~Man'}, {'args': ['a', 'p'], 'ops': 'Siblings'}, {'args': ['p', 'n'], 'ops': 'Parent'}]
+1 [{'args': ['a'], 'ops': '~Man'}, {'args': ['a', 'p'], 'ops': 'Siblings'}, {'args': ['p', 'n'], 'ops': 'Parent'}] aaaaa
+ask 2 {'args': ['Jane'], 'ops': '~Man'}
+{'a': 'Jane', 'n': 'Shelly'} wxh
+goal: {'args': ['Jane'], 'ops': '~Man'}
+rhs {'args': ['May'], 'ops': '~Man'}
+lhs []
+{'a': 'Jane', 'n': 'Shelly'} wxh
+goal: {'args': ['Jane'], 'ops': '~Man'}
+rhs {'args': ['Jane'], 'ops': '~Man'}
+lhs []
+True: {'args': ['Jane'], 'ops': '~Man'}
+[{'args': ['a', 'p'], 'ops': 'Siblings'}, {'args': ['p', 'n'], 'ops': 'Parent'}] {'a': 'Jane', 'n': 'Shelly'} bbb
+1 [{'args': ['a', 'p'], 'ops': 'Siblings'}, {'args': ['p', 'n'], 'ops': 'Parent'}] aaaaa
+ask 2 {'args': ['Jane', 'p'], 'ops': 'Siblings'}
+{'a': 'Jane', 'n': 'Shelly'} wxh
+goal: {'args': ['Jane', 'p'], 'ops': 'Siblings'}
+rhs {'args': ['x1', 'b'], 'ops': 'Siblings'}
+lhs [{'args': ['x2', 'x1'], 'ops': 'Parent'}, {'args': ['x2', 'b'], 'ops': 'Parent'}]
+3 [{'args': ['x2', 'x1'], 'ops': 'Parent'}, {'args': ['x2', 'b'], 'ops': 'Parent'}] aaaaa
+ask 4 {'args': ['x2', 'Jane'], 'ops': 'Parent'}
+{'a': 'Jane', 'p': 'b', 'x1': 'Jane', 'n': 'Shelly'} wxh
+goal: {'args': ['x2', 'Jane'], 'ops': 'Parent'}
+rhs {'args': ['Kevin', 'Peter'], 'ops': 'Parent'}
+lhs []
+{'a': 'Jane', 'p': 'b', 'x1': 'Jane', 'n': 'Shelly'} wxh
+goal: {'args': ['x2', 'Jane'], 'ops': 'Parent'}
+rhs {'args': ['Kevin', 'Gary'], 'ops': 'Parent'}
+lhs []
+{'a': 'Jane', 'p': 'b', 'x1': 'Jane', 'n': 'Shelly'} wxh
+goal: {'args': ['x2', 'Jane'], 'ops': 'Parent'}
+rhs {'args': ['Kevin', 'Jane'], 'ops': 'Parent'}
+lhs []
+True: {'args': ['x2', 'Jane'], 'ops': 'Parent'}
+[{'args': ['x2', 'b'], 'ops': 'Parent'}] {'a': 'Jane', 'p': 'b', 'x1': 'Jane', 'x2': 'Kevin', 'n': 'Shelly'} bbb
+3 [{'args': ['x2', 'b'], 'ops': 'Parent'}] aaaaa
+ask 4 {'args': ['Kevin', 'b'], 'ops': 'Parent'}
+{'a': 'Jane', 'p': 'b', 'x1': 'Jane', 'x2': 'Kevin', 'n': 'Shelly'} wxh
+goal: {'args': ['Kevin', 'b'], 'ops': 'Parent'}
+rhs {'args': ['Kevin', 'Peter'], 'ops': 'Parent'}
+lhs []
+True: {'args': ['Kevin', 'b'], 'ops': 'Parent'}
+[] {'a': 'Jane', 'b': 'Peter', 'n': 'Shelly', 'p': 'b', 'x2': 'Kevin', 'x1': 'Jane'} bbb
+{'a': 'Jane', 'b': 'Peter', 'n': 'Shelly', 'p': 'b', 'x2': 'Kevin', 'x1': 'Jane'} zzzz
+{'a': 'Jane', 'b': 'Peter', 'n': 'Shelly', 'p': 'b', 'x2': 'Kevin', 'x1': 'Jane'} zzzz
+True: {'args': ['Jane', 'p'], 'ops': 'Siblings'}
+[{'args': ['p', 'n'], 'ops': 'Parent'}] {'a': 'Jane', 'b': 'Peter', 'n': 'Shelly', 'p': 'b', 'x2': 'Kevin', 'x1': 'Jane'} bbb
+1 [{'args': ['p', 'n'], 'ops': 'Parent'}] aaaaa
+ask 2 {'args': ['Peter', 'Shelly'], 'ops': 'Parent'}
+{'a': 'Jane', 'b': 'Peter', 'n': 'Shelly', 'p': 'b', 'x2': 'Kevin', 'x1': 'Jane'} wxh
+goal: {'args': ['Peter', 'Shelly'], 'ops': 'Parent'}
+rhs {'args': ['Kevin', 'Peter'], 'ops': 'Parent'}
+lhs []
+{'a': 'Jane', 'b': 'Peter', 'n': 'Shelly', 'p': 'b', 'x2': 'Kevin', 'x1': 'Jane'} wxh
+goal: {'args': ['Peter', 'Shelly'], 'ops': 'Parent'}
+rhs {'args': ['Kevin', 'Gary'], 'ops': 'Parent'}
+lhs []
+{'a': 'Jane', 'b': 'Peter', 'n': 'Shelly', 'p': 'b', 'x2': 'Kevin', 'x1': 'Jane'} wxh
+goal: {'args': ['Peter', 'Shelly'], 'ops': 'Parent'}
+rhs {'args': ['Kevin', 'Jane'], 'ops': 'Parent'}
+lhs []
+{'a': 'Jane', 'b': 'Peter', 'n': 'Shelly', 'p': 'b', 'x2': 'Kevin', 'x1': 'Jane'} wxh
+goal: {'args': ['Peter', 'Shelly'], 'ops': 'Parent'}
+rhs {'args': ['May', 'Shelly'], 'ops': 'Parent'}
+lhs []
+False {'args': ['Peter', 'Shelly'], 'ops': 'Parent'}
+ask' 4 {'args': ['Kevin', 'b'], 'ops': 'Parent'}
+{'a': 'Jane', 'p': 'b', 'x1': 'Jane', 'x2': 'Kevin', 'n': 'Shelly'} wxh
+goal: {'args': ['Kevin', 'b'], 'ops': 'Parent'}
+rhs {'args': ['Kevin', 'Gary'], 'ops': 'Parent'}
+lhs []
+True: {'args': ['Kevin', 'b'], 'ops': 'Parent'}
+[] {'a': 'Jane', 'b': 'Gary', 'n': 'Shelly', 'p': 'b', 'x2': 'Kevin', 'x1': 'Jane'} bbb
+{'a': 'Jane', 'b': 'Gary', 'n': 'Shelly', 'p': 'b', 'x2': 'Kevin', 'x1': 'Jane'} zzzz
+{'a': 'Jane', 'b': 'Gary', 'n': 'Shelly', 'p': 'b', 'x2': 'Kevin', 'x1': 'Jane'} zzzz
+True: {'args': ['Jane', 'p'], 'ops': 'Siblings'}
+[{'args': ['p', 'n'], 'ops': 'Parent'}] {'a': 'Jane', 'b': 'Gary', 'n': 'Shelly', 'p': 'b', 'x2': 'Kevin', 'x1': 'Jane'} bbb
+1 [{'args': ['p', 'n'], 'ops': 'Parent'}] aaaaa
+ask 2 {'args': ['Gary', 'Shelly'], 'ops': 'Parent'}
+{'a': 'Jane', 'b': 'Gary', 'n': 'Shelly', 'p': 'b', 'x2': 'Kevin', 'x1': 'Jane'} wxh
+goal: {'args': ['Gary', 'Shelly'], 'ops': 'Parent'}
+rhs {'args': ['Kevin', 'Peter'], 'ops': 'Parent'}
+lhs []
+{'a': 'Jane', 'b': 'Gary', 'n': 'Shelly', 'p': 'b', 'x2': 'Kevin', 'x1': 'Jane'} wxh
+goal: {'args': ['Gary', 'Shelly'], 'ops': 'Parent'}
+rhs {'args': ['Kevin', 'Gary'], 'ops': 'Parent'}
+lhs []
+{'a': 'Jane', 'b': 'Gary', 'n': 'Shelly', 'p': 'b', 'x2': 'Kevin', 'x1': 'Jane'} wxh
+goal: {'args': ['Gary', 'Shelly'], 'ops': 'Parent'}
+rhs {'args': ['Kevin', 'Jane'], 'ops': 'Parent'}
+lhs []
+{'a': 'Jane', 'b': 'Gary', 'n': 'Shelly', 'p': 'b', 'x2': 'Kevin', 'x1': 'Jane'} wxh
+goal: {'args': ['Gary', 'Shelly'], 'ops': 'Parent'}
+rhs {'args': ['May', 'Shelly'], 'ops': 'Parent'}
+lhs []
+False {'args': ['Gary', 'Shelly'], 'ops': 'Parent'}
+ask' 4 {'args': ['Kevin', 'b'], 'ops': 'Parent'}
+{'a': 'Jane', 'p': 'b', 'x1': 'Jane', 'x2': 'Kevin', 'n': 'Shelly'} wxh
+goal: {'args': ['Kevin', 'b'], 'ops': 'Parent'}
+rhs {'args': ['Kevin', 'Jane'], 'ops': 'Parent'}
+lhs []
+True: {'args': ['Kevin', 'b'], 'ops': 'Parent'}
+[] {'a': 'Jane', 'b': 'Jane', 'n': 'Shelly', 'p': 'b', 'x2': 'Kevin', 'x1': 'Jane'} bbb
+{'a': 'Jane', 'b': 'Jane', 'n': 'Shelly', 'p': 'b', 'x2': 'Kevin', 'x1': 'Jane'} zzzz
+{'a': 'Jane', 'b': 'Jane', 'n': 'Shelly', 'p': 'b', 'x2': 'Kevin', 'x1': 'Jane'} zzzz
+True: {'args': ['Jane', 'p'], 'ops': 'Siblings'}
+[{'args': ['p', 'n'], 'ops': 'Parent'}] {'a': 'Jane', 'b': 'Jane', 'n': 'Shelly', 'p': 'b', 'x2': 'Kevin', 'x1': 'Jane'} bbb
+1 [{'args': ['p', 'n'], 'ops': 'Parent'}] aaaaa
+ask 2 {'args': ['Jane', 'Shelly'], 'ops': 'Parent'}
+{'a': 'Jane', 'b': 'Jane', 'n': 'Shelly', 'p': 'b', 'x2': 'Kevin', 'x1': 'Jane'} wxh
+goal: {'args': ['Jane', 'Shelly'], 'ops': 'Parent'}
+rhs {'args': ['Kevin', 'Peter'], 'ops': 'Parent'}
+lhs []
+{'a': 'Jane', 'b': 'Jane', 'n': 'Shelly', 'p': 'b', 'x2': 'Kevin', 'x1': 'Jane'} wxh
+goal: {'args': ['Jane', 'Shelly'], 'ops': 'Parent'}
+rhs {'args': ['Kevin', 'Gary'], 'ops': 'Parent'}
+lhs []
+{'a': 'Jane', 'b': 'Jane', 'n': 'Shelly', 'p': 'b', 'x2': 'Kevin', 'x1': 'Jane'} wxh
+goal: {'args': ['Jane', 'Shelly'], 'ops': 'Parent'}
+rhs {'args': ['Kevin', 'Jane'], 'ops': 'Parent'}
+lhs []
+{'a': 'Jane', 'b': 'Jane', 'n': 'Shelly', 'p': 'b', 'x2': 'Kevin', 'x1': 'Jane'} wxh
+goal: {'args': ['Jane', 'Shelly'], 'ops': 'Parent'}
+rhs {'args': ['May', 'Shelly'], 'ops': 'Parent'}
+lhs []
+False {'args': ['Jane', 'Shelly'], 'ops': 'Parent'}
+ask' 4 {'args': ['Kevin', 'b'], 'ops': 'Parent'}
+{'a': 'Jane', 'p': 'b', 'x1': 'Jane', 'x2': 'Kevin', 'n': 'Shelly'} wxh
+goal: {'args': ['Kevin', 'b'], 'ops': 'Parent'}
+rhs {'args': ['May', 'Shelly'], 'ops': 'Parent'}
+lhs []
+ask' 4 {'args': ['Kevin', 'b'], 'ops': 'Parent'}
+ask' 4 {'args': ['x2', 'Jane'], 'ops': 'Parent'}
+{'a': 'Jane', 'p': 'b', 'x1': 'Jane', 'n': 'Shelly'} wxh
+goal: {'args': ['x2', 'Jane'], 'ops': 'Parent'}
+rhs {'args': ['May', 'Shelly'], 'ops': 'Parent'}
+lhs []
+ask' 4 {'args': ['x2', 'Jane'], 'ops': 'Parent'}
+ask' 2 {'args': ['Jane', 'p'], 'ops': 'Siblings'}
+ask' 2 {'args': ['Jane'], 'ops': '~Man'}
+ask' 0 {'args': ['Jane', 'Shelly'], 'ops': 'Aunt'}
+False {'args': ['Jane', 'Shelly'], 'ops': 'Aunt'}

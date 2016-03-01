@@ -1,16 +1,23 @@
 import sys
+import copy
 class Fol:
 	def __init__(self,inputFile):
 		# init knowledge baes and query
 		with open(inputFile) as f:
 			self.initKb(f)
-		print self.kb
-		print self.query
+		# print self.kb
+		# print self.query
 		# query and infer uding backforward-chaining alg
+		self.var=0
+		self.usedVar=set()
 		with open("output.txt","w") as f:
 			for q in self.query : 
+				
 				for s in self.ask(self.kb,q,f) :
-					print s
+					print "aaa",s,"result"
+					print self.kb
+					return
+
 	def initKb(self,file):
 		self.kb=[] 
 		self.query=self.generate_query(file.readline().strip())
@@ -43,33 +50,90 @@ class Fol:
 		return predicate
 	def ask(self,kb,query,output):
 		
-		return self.fol_bc_or(kb,query,{})
+		return self.fol_bc_or(kb,query,{},0)
 
-	def fol_bc_or(self,kb,goal,theta):
-		print "sadfsad"
-		for (lhs,rhs) in self.fetch_rules_for_goals(kb,goal):
-			print lhs,rhs
-			(lhs,rhs)= self.standardize_variables(lhs,rhs)
-			for x in self.fol_bc_and(kb,lhs,self.unify(rhs,goal,theta)):
+	def fol_bc_or(self,kb,goal,theta,level):
+		# ~ally  ally
+		self.usedVar.update(goal["args"])
+		find=False
+		firstfact=True
+		print "ask",level,goal
+		for (lhs,rhs) in self.fetch_rules_for_goals(kb,goal): 
+			print theta,"wxh"
+			
+			(lhs,rhs)= self.standardize_variables((lhs,rhs)) ##can not change value here
+			print "goal:",goal
+			print "rhs",rhs
+			print "lhs",lhs
+			for x in self.fol_bc_and(kb,lhs,self.unify(goal,rhs,copy.deepcopy(theta)),level+1):
+				print "True:",goal
+				find=True
 				yield x
-	def standardize_variables(self,lhs,rhs):
-		return(lhs,rhs)			
-	def fol_bc_and(self,kb,goal,theta):
-	 	if theta==None: return
+			if not len(lhs)==0 or find==True: print "ask'",level,goal	
+		if find==False and goal["ops"][0]=='~':
+		
+			for x in self.fol_bc_or(kb,self.negate(goal),theta,level):
+				print "False",goal
+				return 
+			
+			print "True",goal
+			yield theta
+		if find==False: print "False",goal	
+
+	
+	def negate(self,g):
+		goal=copy.deepcopy(g)
+		if goal["ops"][0]=='~':goal["ops"]=goal["ops"][1:]
+		else : goal["ops"]='~'+goal["ops"]
+		return goal
+	def standardize_variables(self,t):		
+		lhs,rhs=t
+		change={}
+		tempvar=set()
+		for i in range(len(rhs["args"])):
+			if rhs["args"][i] in self.usedVar and rhs["args"][i][0].islower() :
+				change[rhs["args"][i]]=self.nextVar()
+				rhs["args"][i]=change[rhs["args"][i]]
+			else: tempvar.add(rhs["args"][i] )
+
+		for x in lhs:
+			for i in range(len(x["args"])):
+				if x["args"][i]  in change:
+					x["args"][i]=change[x["args"][i]]
+				elif x["args"][i] not in tempvar and x["args"][i] in self.usedVar and x["args"][i][0].islower():
+					change[x["args"][i]]=self.nextVar()
+					x["args"][i]=change[x["args"][i]]
+				
+
+		self.usedVar.update(tempvar)
+		return(lhs,rhs) 
+	def nextVar(self):
+		self.var+=1
+		self.usedVar.add("x"+str(self.var))
+		return "x"+str(self.var)			
+	def fol_bc_and(self,kb,goal,theta,level):
+		
+	 	if theta==None: return 
 	 	elif len(goal)==0: yield theta
 	 	else: 
 	 		first,rest=goal[0],goal[1:]
-	 		for  x in self.fol_bc_or(kb,self.subst(theta,first),theta):
-	 			for y in self.fol_bc_and(kb,rest,x):
+	 		print level,goal ,"aaaaa"
+	 		for  x in self.fol_bc_or(kb,self.subst(theta,first),copy.deepcopy(theta),level+1):
+	 			print rest,x,"bbb"
+	 			for y in self.fol_bc_and(kb,copy.deepcopy(rest),copy.deepcopy(x),level):
+	 				print y,"zzzz"
 	 				yield y
 	def subst(self,theta,first):
 		for f in first:
 			for i in range(len(first["args"])):
 				if first["args"][i] in theta:
-					first["args"][i]=theta[first["args"][i]] 
+					first["args"][i]=theta[first["args"][i]]
+		return first 
 	def fetch_rules_for_goals(self,kb,goal):
-		print "asdf" , kb , goal
-		return [ (k["lhs"],k["rhs"]) for k in kb if k["rhs"]["ops"]==goal["ops"] ]
+		a=[ (copy.deepcopy(k["lhs"]),copy.deepcopy(k["rhs"])) for k in kb if k["rhs"]["ops"]==goal["ops"] ]
+		# b=[ (k["lhs"],k["rhs"]) for k in kb if ("~"+k["rhs"]["ops"])==goal["ops"] ]
+		# a.extend(b)
+		return a
 	def unify(self,x,y,theta): # theta is dictionary key is variable,value is constant to substiteu
 		if theta is None : return None ## None means failure
 		elif x==y: return theta
@@ -80,8 +144,8 @@ class Fol:
 		else: return None
 
 	def unify_var(self,var,x,theta):
-		if  var in theta: return unify(theta[var],x,theta)
-		elif x in theta: return unify(var,theta[x],theta)
+		if  var in theta: return self.unify(theta[var],x,theta)
+		elif x in theta: return self.unify(var,theta[x],theta)
 		# elif occur_check(var,x):return failure
 		else : theta[var]=x;return theta
 
