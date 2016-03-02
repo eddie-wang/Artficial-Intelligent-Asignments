@@ -11,8 +11,7 @@ class Fol:
 		self.var=0
 		self.usedVar=set()
 		with open("output.txt","w") as f:
-			for q in self.query : 
-				
+			for q in self.query : 				
 				for s in self.ask(self.kb,q,f) :
 					print "aaa",s,"result"
 					print self.kb
@@ -49,37 +48,38 @@ class Fol:
 		predicate["args"]=term[term.find("(")+1:-1].split(", ")
 		return predicate
 	def ask(self,kb,query,output):
-		
 		return self.fol_bc_or(kb,query,{},0)
 
 	def fol_bc_or(self,kb,goal,theta,level):
 		# ~ally  ally
+		print "ask",self.myprint(goal,theta)
 		self.usedVar.update(goal["args"])
 		find=False
 		firstfact=True
-		print "ask",level,goal
-		for (lhs,rhs) in self.fetch_rules_for_goals(kb,goal): 
-			print theta,"wxh"
+		truenum=0
+		for (lhs,rhs) in self.fetch_rules_for_goals(kb,goal):
 			
 			(lhs,rhs)= self.standardize_variables((lhs,rhs)) ##can not change value here
-			print "goal:",goal
-			print "rhs",rhs
-			print "lhs",lhs
-			for x in self.fol_bc_and(kb,lhs,self.unify(goal,rhs,copy.deepcopy(theta)),level+1):
-				print "True:",goal
+			u=self.unify(goal,rhs,copy.deepcopy(theta))
+
+			if u : 
+				truenum+=1
+				if truenum>1:print "ask",self.myprint(goal,theta)
+			firstfact=False
+			for x in self.fol_bc_and(kb,lhs,u,level+1):
+				print "True:",self.myprint(self.subst(x,goal),theta)
 				find=True
 				yield x
-			if not len(lhs)==0 or find==True: print "ask'",level,goal	
-		if find==False and goal["ops"][0]=='~':
-		
+		# porbable problems here
+		if find==False and goal["ops"][0]=='~': #questions here ask Ta!!!
 			for x in self.fol_bc_or(kb,self.negate(goal),theta,level):
-				print "False",goal
+				print "False",self.myprint(self.subst(x,goal),theta)
 				return 
 			
-			print "True",goal
+			print "True",self.myprint(goal,theta)
 			yield theta
-		if find==False: print "False",goal	
-
+			
+		if find==False: print "False",self.myprint(goal,theta)	
 	
 	def negate(self,g):
 		goal=copy.deepcopy(g)
@@ -104,7 +104,6 @@ class Fol:
 					change[x["args"][i]]=self.nextVar()
 					x["args"][i]=change[x["args"][i]]
 				
-
 		self.usedVar.update(tempvar)
 		return(lhs,rhs) 
 	def nextVar(self):
@@ -117,16 +116,17 @@ class Fol:
 	 	elif len(goal)==0: yield theta
 	 	else: 
 	 		first,rest=goal[0],goal[1:]
-	 		print level,goal ,"aaaaa"
 	 		for  x in self.fol_bc_or(kb,self.subst(theta,first),copy.deepcopy(theta),level+1):
-	 			print rest,x,"bbb"
-	 			for y in self.fol_bc_and(kb,copy.deepcopy(rest),copy.deepcopy(x),level):
-	 				print y,"zzzz"
+	 			# print rest,x,"bbb"
+	 			for y in self.fol_bc_and(kb,copy.deepcopy(rest),copy.deepcopy(x),level):	
+	 				# print "ask"
 	 				yield y
+
 	def subst(self,theta,first):
+		first=copy.deepcopy(first)
 		for f in first:
 			for i in range(len(first["args"])):
-				if first["args"][i] in theta:
+				while first["args"][i] in theta:
 					first["args"][i]=theta[first["args"][i]]
 		return first 
 	def fetch_rules_for_goals(self,kb,goal):
@@ -149,7 +149,11 @@ class Fol:
 		# elif occur_check(var,x):return failure
 		else : theta[var]=x;return theta
 
-
+	def myprint(self,term,theta):
+		def change(c):
+			if c[0].islower() and c not in theta: return "_"
+			return c
+		return term["ops"]+"("+",".join(map(change,term["args"]))+")"
 if __name__=='__main__':
 	if len(sys.argv)!=3 or sys.argv[1]!='-i':
 		print "input error"
