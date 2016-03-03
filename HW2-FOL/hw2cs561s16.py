@@ -5,17 +5,12 @@ class Fol:
 		# init knowledge baes and query
 		with open(inputFile) as f:
 			self.initKb(f)
-		# print self.kb
-		# print self.query
 		# query and infer uding backforward-chaining alg
 		self.var=0
 		self.usedVar=set()
-		with open("output.txt","w") as f:
-			for q in self.query : 				
-				for s in self.ask(self.kb,q,f) :
-					print "aaa",s,"result"
-					print self.kb
-					return
+
+		with open("output.txt","w") as self.output:
+			self.ask(self.kb,self.query)
 
 	def initKb(self,file):
 		self.kb=[] 
@@ -47,12 +42,18 @@ class Fol:
 		predicate["ops"]=term[:term.find("(")]
 		predicate["args"]=term[term.find("(")+1:-1].split(", ")
 		return predicate
-	def ask(self,kb,query,output):
-		return self.fol_bc_or(kb,query,{},0)
-
-	def fol_bc_or(self,kb,goal,theta,level):
+	
+	def ask(self,kb,query):
+		if not len(query)==0:
+			try:
+				self.fol_bc_or(kb,query[0],{}).next()
+				self.ask(kb,query[1:])
+			except Exception:
+				self.output.write("False")
+		else: self.output.write("True")		
+	def fol_bc_or(self,kb,goal,theta):
 		# ~ally  ally
-		print "ask",self.myprint(goal,theta)
+		self.output.write("Ask: "+self.myprint(goal,theta)+"\n")
 		self.usedVar.update(goal["args"])
 		find=False
 		firstfact=True
@@ -61,25 +62,24 @@ class Fol:
 			
 			(lhs,rhs)= self.standardize_variables((lhs,rhs)) ##can not change value here
 			u=self.unify(goal,rhs,copy.deepcopy(theta))
-
 			if u : 
 				truenum+=1
-				if truenum>1:print "ask",self.myprint(goal,theta)
+				if truenum>1:self.output.write("Ask: "+self.myprint(goal,theta)+"\n")
 			firstfact=False
-			for x in self.fol_bc_and(kb,lhs,u,level+1):
-				print "True:",self.myprint(self.subst(x,goal),theta)
+			for x in self.fol_bc_and(kb,lhs,u):
+				print self.output.write("True: "+self.myprint(self.subst(x,goal),theta)+"\n")
 				find=True
 				yield x
-		# porbable problems here
-		if find==False and goal["ops"][0]=='~': #questions here ask Ta!!!
-			for x in self.fol_bc_or(kb,self.negate(goal),theta,level):
-				print "False",self.myprint(self.subst(x,goal),theta)
-				return 
+		# # handle negation operator
+		# if find==False and goal["ops"][0]=='~': #questions here ask Ta!!!
+		# 	for x in self.fol_bc_or(kb,self.negate(goal),theta,level):
+		# 		print "False",self.myprint(self.subst(x,goal),theta)
+		# 		return 
 			
-			print "True",self.myprint(goal,theta)
-			yield theta
-			
-		if find==False: print "False",self.myprint(goal,theta)	
+		# 	print "True",self.myprint(goal,theta)
+		# 	yield theta
+
+		if find==False: self.output.write("False: "+self.myprint(goal,theta)+"\n")	
 	
 	def negate(self,g):
 		goal=copy.deepcopy(g)
@@ -110,16 +110,13 @@ class Fol:
 		self.var+=1
 		self.usedVar.add("x"+str(self.var))
 		return "x"+str(self.var)			
-	def fol_bc_and(self,kb,goal,theta,level):
-		
+	def fol_bc_and(self,kb,goal,theta):
 	 	if theta==None: return 
 	 	elif len(goal)==0: yield theta
 	 	else: 
 	 		first,rest=goal[0],goal[1:]
-	 		for  x in self.fol_bc_or(kb,self.subst(theta,first),copy.deepcopy(theta),level+1):
-	 			# print rest,x,"bbb"
-	 			for y in self.fol_bc_and(kb,copy.deepcopy(rest),copy.deepcopy(x),level):	
-	 				# print "ask"
+	 		for  x in self.fol_bc_or(kb,self.subst(theta,first),copy.deepcopy(theta)):
+	 			for y in self.fol_bc_and(kb,copy.deepcopy(rest),copy.deepcopy(x)):	
 	 				yield y
 
 	def subst(self,theta,first):
@@ -131,8 +128,6 @@ class Fol:
 		return first 
 	def fetch_rules_for_goals(self,kb,goal):
 		a=[ (copy.deepcopy(k["lhs"]),copy.deepcopy(k["rhs"])) for k in kb if k["rhs"]["ops"]==goal["ops"] ]
-		# b=[ (k["lhs"],k["rhs"]) for k in kb if ("~"+k["rhs"]["ops"])==goal["ops"] ]
-		# a.extend(b)
 		return a
 	def unify(self,x,y,theta): # theta is dictionary key is variable,value is constant to substiteu
 		if theta is None : return None ## None means failure
@@ -153,7 +148,7 @@ class Fol:
 		def change(c):
 			if c[0].islower() and c not in theta: return "_"
 			return c
-		return term["ops"]+"("+",".join(map(change,term["args"]))+")"
+		return term["ops"]+"("+", ".join(map(change,term["args"]))+")"
 if __name__=='__main__':
 	if len(sys.argv)!=3 or sys.argv[1]!='-i':
 		print "input error"
