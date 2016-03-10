@@ -57,10 +57,11 @@ class Fol:
 		find=False
 		truenum=0
 		for (lhs,rhs) in self.fetch_rules_for_goals(kb,goal):
-			
+			print lhs,rhs
 			(lhs,rhs)= self.standardize_variables((lhs,rhs)) ##can not change value here
+			print "after",lhs,rhs
 			u=self.unify(goal,rhs,copy.deepcopy(theta))
-			if u : 
+			if u: 
 				truenum+=1
 				if truenum>1:self.output.write("Ask: "+self.myprint(goal,theta)+"\n")
 			for x in self.fol_bc_and(kb,lhs,u):
@@ -82,30 +83,13 @@ class Fol:
 		lhs,rhs=t
 		change={}
 		tempvar=set()
-		
-		temp=[rhs]+lhs
-		for x in temp:
-			for i in range(len(x["args"])):
-				if x["args"][i] in self.usedVar and x["args"][i][0].islower():
-					if x["args"][i] not in change: change[x["args"][i]]=self.nextVar()
-					x["args"][i] =change[x["args"][i]]
-				else :tempvar.add(x["args"][i])
 
+		for arg in [ arg for x in lhs for arg in x["args"] ]+rhs["args"]:
+			if arg in self.usedVar and arg[0].islower() :
+				if arg not in change: change[arg]=self.nextVar()
+				arg=change[arg]
+			else: tempvar.add(arg)
 
-		# for i in range(len(rhs["args"])):
-		# 	if rhs["args"][i] in self.usedVar and rhs["args"][i][0].islower() :
-		# 		if rhs["args"][i] not in change : change[rhs["args"][i]]=self.nextVar()
-		# 		rhs["args"][i]=change[rhs["args"][i]]
-		# 	else: tempvar.add(rhs["args"][i] )
-
-		# for x in lhs:
-		# 	for i in range(len(x["args"])):
-		# 		if x["args"][i]  in change:
-		# 			x["args"][i]=change[x["args"][i]]
-		# 		elif x["args"][i] not in tempvar and x["args"][i] in self.usedVar and x["args"][i][0].islower():
-		# 			change[x["args"][i]]=self.nextVar()
-		# 			x["args"][i]=change[x["args"][i]]
-				
 		self.usedVar.update(tempvar)
 		return(lhs,rhs) 
 	def nextVar(self):
