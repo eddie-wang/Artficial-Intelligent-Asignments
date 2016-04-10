@@ -55,20 +55,39 @@ class HW3:
 			if not file.readline():break
 		print self.bn.cpt
 	def execute(self,output):
-		alg={"P":self.enumeration}
+		alg={"P":self.enumeration,"EU":self.eu,"MEU":self.meu}
 		for query in self.queries:
-			print "{0:.2f}".format(alg[query["type"]](query))
+			# print "{0:.2f}".format(alg[query["type"]](query))
+			 result=alg[query["type"]](query)
+			 if query["type"]=="P":
+			 	if not query["evidence"]:
+			 		print result[0]
+			 	else:
+			 		l=query["query"].keys()
+			 		print result[sum([ (1<<(len(l)-i-1))*query["query"][l[i]] for i in range(len(l))])]
+			 else:
+			 	print result
 	def enumeration(self,query):
 		"""
 			suppose when given  evidence there is only one  
 		"""
+		def normalize(result):
+			total=sum(result)
+			return [i/total for i in result]
+		result = []
 		if query["evidence"]:
-			var=query["query"].keys()[0]
-			a=self.enumerate_all(self.bn.vars,dict(query["evidence"].items()+[(var,1)]))
-			b=self.enumerate_all(self.bn.vars,dict(query["evidence"].items()+[(var,0)]))
-			return a/(a+b) if query["query"][var] else b/(a+b)
+			# var=query["query"].keys()[0]
+			# a=self.enumerate_all(self.bn.vars,dict(query["evidence"].items()+[(var,1)]))
+			# b=self.enumerate_all(self.bn.vars,dict(query["evidence"].items()+[(var,0)]))
+			# return a/(a+b) if query["query"][var] else b/(a+b)
+			# var = query["query"].keys()
+			var = query["query"].keys()
+			for q in self.enumerate_helper(var):
+				result.append(self.enumerate_all(self.bn.vars,dict(query["evidence"].items()+q)))
+			result=normalize(result)
 		else:
-			return self.enumerate_all(self.bn.vars,dict(query["query"].items()))
+			result.append(self.enumerate_all(self.bn.vars,dict(query["query"].items())))
+		return result
 	def enumerate_all(self,var,e):
 		# print var,e,"***"
 		if not var: return 1
@@ -89,16 +108,61 @@ class HW3:
 		index=0
 		parent=self.bn.parents[y]
 		if not parent:
-			return self.bn.cpt[y][0] if e[y]==1 else 1-self.bn.cpt[y][0]
+			return self.bn.cpt[y][0] if e[y]==1 or y in self.bn.decision else 1-self.bn.cpt[y][0]
 		for i,p in enumerate(parent):
 			index=(index<<1)+e[p]
 		# print y,e,parent,index,"ASADDAS"
-		return self.bn.cpt[y][index] if e[y]==1 else 1-self.bn.cpt[y][index]
+		return self.bn.cpt[y][index] if e[y]==1 or y in self.bn.decision else 1-self.bn.cpt[y][index]
 	def eu(self,query):
-		return "not yet"
+		# print query
+		p=list(set(self.bn.parents["utility"])-set(query["evidence"].keys()+query["query"].keys()))
+		# print p,"***"
+		result=0
+		# for q in self.enumerate_helper(p):
+		# 	new_query={}
+		# 	# print q
+		# 	new_query["query"]=dict(q)
+		# 	new_query["evidence"]=dict(query["evidence"].items()+query["query"].items())
+		# 	l,index=[],0
+		# 	for parent in self.bn.parents["utility"]:
+		# 		if parent in new_query["query"]:
+		# 			index=(index<<1)+new_query["query"][parent]
+		# 		else:
+		# 			index=(index<<1)+new_query["evidence"][parent]
+		# 	print index
+		# 	result+=self.enumeration(new_query)*self.bn.cpt["utility"][index]
+		new_query={}
+		# print q
+		new_query["query"]={ var:0 for var in p}
+		print new_query["query"].keys(),self.bn.parents["utility"]
+		new_query["evidence"]=dict(query["evidence"].items()+query["query"].items())
+		print new_query,"***"
+		for i,q in enumerate(self.enumeration(new_query)):
+			print i,q
+			index=0
+			for parent in self.bn.parents["utility"]:
+				if parent in new_query["query"]:
+					index=(index<<1)+1&(i>>(len(p)-p.index(parent)-1))
+				else:
+					index=(index<<1)+new_query["evidence"][parent]
+			result+=q*self.bn.cpt["utility"][index]
+		return result
 	def meu(self,query):
-		return "not yet"
-
+		cmax=-10000
+		for index,q in enumerate(self.enumerate_helper(query["query"])):
+			query["query"]=dict(q)
+			# print q,query
+			cmax=max(cmax,self.eu(query))
+		return cmax
+	def enumerate_helper(self,var):
+		size = 1<<len(var)
+		result=[]
+		for i in range(size):
+			item=[]
+			for j in range(len(var)):
+				item.append((var[j],1&(i>>(len(var)-j-1))))
+			result.append(item)
+		return result
 class Bayesian_Network:
 	def __init__(self):
 		self.cpt={}
