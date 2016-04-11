@@ -32,7 +32,7 @@ class HW3:
 				query["query"]={var:value for (var,value) in map(parse,temp[0].split(", "))}
 			else : query["query"]=[var for var in temp[0].split(", ")]
 			query["evidence"]={var:value for (var,value) in map(parse,temp[1].split(", "))} if len(temp)==2 else dict()
-			print query
+			# print query
 			self.queries.append(query)
 	def construct_bn(self,file):
 		def get_index(l):
@@ -42,7 +42,7 @@ class HW3:
 			line=file.readline().strip()
 			t=line.split(" | ") 
 			if len(t)==1:
-				self.bn.parents[t[0]]=None
+				self.bn.parents[t[0]]=[] #None
 			else: self.bn.parents[t[0]]=t[1].split(' ')
 			if not t[0]=="utility": self.bn.vars.append(t[0])
 			size=pow(2,len(t[1].split(' ')) if len(t)==2 else 0)
@@ -53,9 +53,9 @@ class HW3:
 				if l[0]=="decision": self.bn.decision.append(t[0]);break;
 				self.bn.cpt[t[0]][index]=float(l[0])
 			if not file.readline():break
-		print self.bn.cpt
+		# print self.bn.cpt
 	def execute(self,output):
-		alg={"P":self.enumeration,"EU":self.eu,"MEU":self.meu}
+		alg={"P":self.variable_elimination,"EU":self.eu,"MEU":self.meu}
 		for query in self.queries:
 			# print "{0:.2f}".format(alg[query["type"]](query))
 			 result=alg[query["type"]](query)
@@ -76,11 +76,6 @@ class HW3:
 			return [i/total for i in result]
 		result = []
 		if query["evidence"]:
-			# var=query["query"].keys()[0]
-			# a=self.enumerate_all(self.bn.vars,dict(query["evidence"].items()+[(var,1)]))
-			# b=self.enumerate_all(self.bn.vars,dict(query["evidence"].items()+[(var,0)]))
-			# return a/(a+b) if query["query"][var] else b/(a+b)
-			# var = query["query"].keys()
 			var = query["query"].keys()
 			for q in self.enumerate_helper(var):
 				result.append(self.enumerate_all(self.bn.vars,dict(query["evidence"].items()+q)))
@@ -114,31 +109,15 @@ class HW3:
 		# print y,e,parent,index,"ASADDAS"
 		return self.bn.cpt[y][index] if e[y]==1 or y in self.bn.decision else 1-self.bn.cpt[y][index]
 	def eu(self,query):
-		# print query
 		p=list(set(self.bn.parents["utility"])-set(query["evidence"].keys()+query["query"].keys()))
-		# print p,"***"
 		result=0
-		# for q in self.enumerate_helper(p):
-		# 	new_query={}
-		# 	# print q
-		# 	new_query["query"]=dict(q)
-		# 	new_query["evidence"]=dict(query["evidence"].items()+query["query"].items())
-		# 	l,index=[],0
-		# 	for parent in self.bn.parents["utility"]:
-		# 		if parent in new_query["query"]:
-		# 			index=(index<<1)+new_query["query"][parent]
-		# 		else:
-		# 			index=(index<<1)+new_query["evidence"][parent]
-		# 	print index
-		# 	result+=self.enumeration(new_query)*self.bn.cpt["utility"][index]
 		new_query={}
-		# print q
 		new_query["query"]={ var:0 for var in p}
-		print new_query["query"].keys(),self.bn.parents["utility"]
+		# print new_query["query"].keys(),self.bn.parents["utility"]
 		new_query["evidence"]=dict(query["evidence"].items()+query["query"].items())
-		print new_query,"***"
+		# print new_query,"***"
 		for i,q in enumerate(self.enumeration(new_query)):
-			print i,q
+			# print i,q
 			index=0
 			for parent in self.bn.parents["utility"]:
 				if parent in new_query["query"]:
@@ -148,12 +127,16 @@ class HW3:
 			result+=q*self.bn.cpt["utility"][index]
 		return result
 	def meu(self,query):
-		cmax=-10000
+		def formate(s):
+			if s==1 or s==0:return  "+" if s&1==1 else "-"
+			return formate(s>>1)+ ("+" if s&1==1 else "-")
+		cmax=-100000000
 		for index,q in enumerate(self.enumerate_helper(query["query"])):
 			query["query"]=dict(q)
-			# print q,query
-			cmax=max(cmax,self.eu(query))
-		return cmax
+			cur=self.eu(query)
+			if cur>cmax:
+				cmax=cur;choice=formate(index)
+		return choice+" "+str(cmax)
 	def enumerate_helper(self,var):
 		size = 1<<len(var)
 		result=[]
@@ -163,13 +146,85 @@ class HW3:
 				item.append((var[j],1&(i>>(len(var)-j-1))))
 			result.append(item)
 		return result
+
+	def variable_elimination(self,query):
+		factors=self.generate_factors(query)
+		for var in self.eliminatevars(query):
+			factors=self.sumout(var,factors)
+		return self.normalize(self.pointwise_product(factors))
+	def sumout(self,var,factors):
+		'''
+			input var to be eliminated and factors list
+			reuturn new list after sumout factors var
+
+
+			step:
+				1.find all factors related to var 
+				2.poinstwiase them to one new factors
+				3.sum out new factors based on var 
+		'''
+		factor_list=[f for f in factors if var in f.var]
+		factor=reduce(pointwise_product,factors_list)
+		new_factor=Factor()
+		new_factor.var=[v for v in factor.var if not v==var]
+		index=len(factor.var)-1-factor.var.index(var)
+		new_factor.p=[len(factor.var)/2]
+		for i,p in enumerate(factor.p):
+			n=0
+			for j in range(len(factor.var)):
+				if j!=index:
+					n=(n<<1)+1&(i<<j)	
+			new_factor.p[n]+=p
+
+	def pointwise_product(self,*factor):
+		'''
+			input: a list contain two factors
+			output : new factor
+
+		'''
+		a,b=factor
+
+		
+	def generate_factors(self,query):
+		'''
+
+		'''
+		factors=[]
+		for var in self.bn.vars:
+			f=Factor()
+			f.var=[v for v in self.bn.parents[var]+[var] if v not in query["evidence"].keys()]
+			print var , f.var , "*****"
+			for i in range(pow(2,len(f.var))):
+				index=0
+				parents=self.bn.parents[var]
+				for p in parents:
+					if p not in f.var:
+						x=query["evidence"][p]
+					else:
+						x=1 if 1&(i>>(len(f.var)-1-f.var.index(p))) else 0
+					index=(index<<1)+x
+				if not f.var:
+				 	f.p.append(self.bn.cpt[var][index] if query["evidence"][var] else 1-self.bn.cpt[var][index])
+				else:
+					f.p.append(self.bn.cpt[var][index] if 1&(i>>(len(f.var)-1-f.var.index(var)))  else 1-self.bn.cpt[var][index])
+			print f.var, f.p
+			factors.append(f)
+		return factors	
+	def eliminatevars(self,query):
+		'''
+		 bn.vars-query.vars(query+evidence)
+		'''
+		return [v for v in self.bn.vars if v not in query["evidence"].keys()+ query["query"].keys()]
 class Bayesian_Network:
 	def __init__(self):
 		self.cpt={}
 		self.parents={}
 		self.vars=[]
 		self.decision=[]
-		
+class Factor:
+	def __init__(self):
+		self.var=[]
+		self.p=[]		
 if __name__=="__main__":
 	if len(sys.argv)!=3 or sys.argv[1]!="-i":
 		print "input error"
