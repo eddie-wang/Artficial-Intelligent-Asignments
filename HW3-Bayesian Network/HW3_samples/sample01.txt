@@ -1,3 +1,4 @@
+P(NightDefense = +, Infiltration = -)
 P(Demoralize = + | LeakIdea = +, Infiltration = +)
 ******
 LeakIdea

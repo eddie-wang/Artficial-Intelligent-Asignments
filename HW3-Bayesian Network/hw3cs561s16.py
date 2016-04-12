@@ -66,7 +66,7 @@ class HW3:
 			 		l=query["query"].keys()
 			 		print result[sum([ (1<<(len(l)-i-1))*query["query"][l[i]] for i in range(len(l))])]
 			 else:
-			 	print result
+			 	 print result
 	def enumeration(self,query):
 		"""
 			suppose when given  evidence there is only one  
@@ -116,8 +116,8 @@ class HW3:
 		# print new_query["query"].keys(),self.bn.parents["utility"]
 		new_query["evidence"]=dict(query["evidence"].items()+query["query"].items())
 		# print new_query,"***"
-		for i,q in enumerate(self.enumeration(new_query)):
-			# print i,q
+		for i,q in enumerate(self.enumeration(new_query)): #variable_elimination enumeration
+			# print new_query,q
 			index=0
 			for parent in self.bn.parents["utility"]:
 				if parent in new_query["query"]:
@@ -148,10 +148,16 @@ class HW3:
 		return result
 
 	def variable_elimination(self,query):
+		def normalize(result):
+			if len(result)==1:return result
+			total=sum(result)
+			return [i/total for i in result]
 		factors=self.generate_factors(query)
 		for var in self.eliminatevars(query):
+			# print var,"wwww"
 			factors=self.sumout(var,factors)
-		return self.normalize(self.pointwise_product(factors))
+		# for f in factors: print f.var,f.p
+		return normalize(reduce(self.pointwise_product,factors).p)
 	def sumout(self,var,factors):
 		'''
 			input var to be eliminated and factors list
@@ -164,50 +170,71 @@ class HW3:
 				3.sum out new factors based on var 
 		'''
 		factor_list=[f for f in factors if var in f.var]
-		factor=reduce(pointwise_product,factors_list)
+		factor=reduce(self.pointwise_product,factor_list)
+		# print factor.var ,factor.p,"!!!!!!"
 		new_factor=Factor()
 		new_factor.var=[v for v in factor.var if not v==var]
-		index=len(factor.var)-1-factor.var.index(var)
-		new_factor.p=[len(factor.var)/2]
+		index=factor.var.index(var)
+		new_factor.p=pow(2,len(new_factor.var))*[0]
+		# print new_factor.p,new_factor.var,index
 		for i,p in enumerate(factor.p):
 			n=0
 			for j in range(len(factor.var)):
 				if j!=index:
-					n=(n<<1)+1&(i<<j)	
+					n=(n<<1)+(1&(i>>(len(factor.var)-1-j)))	
 			new_factor.p[n]+=p
-
-	def pointwise_product(self,*factor):
+		# print new_factor.var,new_factor.p,"****"
+		return [f for f in factors if var not in f.var ]+[new_factor]	
+	def pointwise_product(self,*factors):
 		'''
 			input: a list contain two factors
 			output : new factor
 
 		'''
-		a,b=factor
-
-		
+		def index(a,b,i):
+			result=0
+			d={ var: 1&(i>>(len(a)-1-j)) for j,var in enumerate(a)}
+			for var in b:
+				result=(result<<1)+d[var]
+			return result
+		a,b=factors
+		var=list(set(a.var+b.var))
+		new_factor=Factor()
+		new_factor.var=var
+		for i in range(pow(2,len(var))):
+			new_factor.p.append(a.p[index(var,a.var,i)]*b.p[index(var,b.var,i)])
+		return new_factor
 	def generate_factors(self,query):
 		'''
 
 		'''
 		factors=[]
 		for var in self.bn.vars:
+			# print var, "aaa"
 			f=Factor()
-			f.var=[v for v in self.bn.parents[var]+[var] if v not in query["evidence"].keys()]
-			print var , f.var , "*****"
+			if query["evidence"]:
+				f.var=[v for v in self.bn.parents[var]+[var] if v not in query["evidence"].keys()]
+			else: f.var=[v for v in self.bn.parents[var]+[var] if v not in query["query"].keys()]
+			if not f.var and var in query["evidence"].keys() : continue
+
+			# print f.var
 			for i in range(pow(2,len(f.var))):
 				index=0
 				parents=self.bn.parents[var]
 				for p in parents:
 					if p not in f.var:
-						x=query["evidence"][p]
+						x=query["evidence"][p] if p in query["evidence"] else query["query"][p] 
 					else:
 						x=1 if 1&(i>>(len(f.var)-1-f.var.index(p))) else 0
 					index=(index<<1)+x
-				if not f.var:
-				 	f.p.append(self.bn.cpt[var][index] if query["evidence"][var] else 1-self.bn.cpt[var][index])
+				if not var in f.var:
+					if var in query["query"]:
+				 		f.p.append(self.bn.cpt[var][index] if query["query"][var] else 1-self.bn.cpt[var][index])
+				 	else: f.p.append(self.bn.cpt[var][index] if query["evidence"][var] else 1-self.bn.cpt[var][index])
 				else:
+					# print f.var
 					f.p.append(self.bn.cpt[var][index] if 1&(i>>(len(f.var)-1-f.var.index(var)))  else 1-self.bn.cpt[var][index])
-			print f.var, f.p
+			# print var,f.var, f.p
 			factors.append(f)
 		return factors	
 	def eliminatevars(self,query):
@@ -227,6 +254,6 @@ class Factor:
 		self.p=[]		
 if __name__=="__main__":
 	if len(sys.argv)!=3 or sys.argv[1]!="-i":
-		print "input error"
+		# print "input error"
 		sys.exit()
 	bn= HW3(sys.argv[2])
