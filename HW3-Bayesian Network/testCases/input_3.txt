@@ -1,25 +1,23 @@
-P(Demoralize = + | LeakIdea = -, Infiltration = -)
-EU(Infiltration = +, LeakIdea = +)
-MEU(Infiltration | LeakIdea = +)
+MEU(Infiltration, LeakIdea)
 ******
 LeakIdea
 decision
 ***
 NightDefense | LeakIdea
-0.8 +
+0.9 +
 0.3 -
 ***
 Infiltration
 decision
 ***
 Demoralize | NightDefense Infiltration
-0.3 + +
+0.2 + +
 0.6 + -
-0.95 - +
-0.05 - -
+0.9 - +
+0.2 - -
 ******
 utility | Demoralize Infiltration
 100 + -
-80 + +
--10 - -
--50 - +
+0 + +
+40 - -
+70 - +

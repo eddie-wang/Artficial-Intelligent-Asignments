@@ -1,5 +1,6 @@
 import sys
 import  copy
+from decimal import Decimal
 class HW3:
 	def __init__(self,input_file):
 		"""
@@ -32,7 +33,6 @@ class HW3:
 				query["query"]={var:value for (var,value) in map(parse,temp[0].split(", "))}
 			else : query["query"]=[var for var in temp[0].split(", ")]
 			query["evidence"]={var:value for (var,value) in map(parse,temp[1].split(", "))} if len(temp)==2 else dict()
-			# print query
 			self.queries.append(query)
 	def construct_bn(self,file):
 		def get_index(l):
@@ -53,20 +53,29 @@ class HW3:
 				if l[0]=="decision": self.bn.decision.append(t[0]);break;
 				self.bn.cpt[t[0]][index]=float(l[0])
 			if not file.readline():break
-		# print self.bn.cpt
+
 	def execute(self,output):
-		alg={"P":self.variable_elimination,"EU":self.eu,"MEU":self.meu}
+		# start = timeit.default_timer()
+		alg={"P":self.enumeration,"EU":self.eu,"MEU":self.meu}
 		for query in self.queries:
-			# print "{0:.2f}".format(alg[query["type"]](query))
 			 result=alg[query["type"]](query)
 			 if query["type"]=="P":
 			 	if not query["evidence"]:
 			 		print result[0]
+			 		output.write(str(Decimal(str(result[0]+1e-8)).quantize(Decimal(".01")))) 		
 			 	else:
 			 		l=query["query"].keys()
 			 		print result[sum([ (1<<(len(l)-i-1))*query["query"][l[i]] for i in range(len(l))])]
+			 		output.write( str(Decimal(str(result[sum([ (1<<(len(l)-i-1))*query["query"][l[i]] for i in range(len(l))])] +1e-8)).quantize(Decimal(".01"))))
+			 elif query["type"]=="EU" :
+			 	print result
+			 	output.write(str(int(round(result))))
 			 else:
-			 	 print result
+			 	print result
+			 	output.write(str(result))
+			 if query!=self.queries[-1]:output.write("\n")
+		# end = timeit.default_timer()
+		# print end-start
 	def enumeration(self,query):
 		"""
 			suppose when given  evidence there is only one  
@@ -84,20 +93,16 @@ class HW3:
 			result.append(self.enumerate_all(self.bn.vars,dict(query["query"].items())))
 		return result
 	def enumerate_all(self,var,e):
-		# print var,e,"***"
 		if not var: return 1
 		y=var[0]
 		if y in e:
 			parent=self.bn.parents[y]
-			t=self.p_of_y_given_parent(y,e)*self.enumerate_all(var[1:],e)
-			# print t
-			return t
+			return self.p_of_y_given_parent(y,e)*self.enumerate_all(var[1:],e)
 		else:
 			e[y]=0
 			r=self.p_of_y_given_parent(y,e)*self.enumerate_all(var[1:],copy.deepcopy(e))
 			e[y]=1
 			t=r+self.p_of_y_given_parent(y,e)*self.enumerate_all(var[1:],copy.deepcopy(e))
-			# print t
 			return t		
 	def p_of_y_given_parent(self,y,e):
 		index=0
@@ -106,37 +111,38 @@ class HW3:
 			return self.bn.cpt[y][0] if e[y]==1 or y in self.bn.decision else 1-self.bn.cpt[y][0]
 		for i,p in enumerate(parent):
 			index=(index<<1)+e[p]
-		# print y,e,parent,index,"ASADDAS"
 		return self.bn.cpt[y][index] if e[y]==1 or y in self.bn.decision else 1-self.bn.cpt[y][index]
 	def eu(self,query):
 		p=list(set(self.bn.parents["utility"])-set(query["evidence"].keys()+query["query"].keys()))
-		result=0
+		result=0.0
 		new_query={}
 		new_query["query"]={ var:0 for var in p}
-		# print new_query["query"].keys(),self.bn.parents["utility"]
 		new_query["evidence"]=dict(query["evidence"].items()+query["query"].items())
-		# print new_query,"***"
+		# print query , new_query
 		for i,q in enumerate(self.enumeration(new_query)): #variable_elimination enumeration
-			# print new_query,q
+			# print i;
 			index=0
 			for parent in self.bn.parents["utility"]:
+				print index
 				if parent in new_query["query"]:
-					index=(index<<1)+1&(i>>(len(p)-p.index(parent)-1))
+					index=(index<<1)+(1&(i>>(len(p)-p.index(parent)-1)))
 				else:
 					index=(index<<1)+new_query["evidence"][parent]
+			# print q,index,self.bn.cpt["utility"]
 			result+=q*self.bn.cpt["utility"][index]
 		return result
 	def meu(self,query):
 		def formate(s):
-			if s==1 or s==0:return  "+" if s&1==1 else "-"
-			return formate(s>>1)+ ("+" if s&1==1 else "-")
+			if s==1 or s==0:return  "+ " if s&1==1 else "- "
+			return formate(s>>1)+ ("+ " if s&1==1 else "- ")
 		cmax=-100000000
 		for index,q in enumerate(self.enumerate_helper(query["query"])):
+			print query["query"] , index, formate(index)
 			query["query"]=dict(q)
 			cur=self.eu(query)
 			if cur>cmax:
 				cmax=cur;choice=formate(index)
-		return choice+" "+str(cmax)
+		return choice+str(int(round(cmax)))
 	def enumerate_helper(self,var):
 		size = 1<<len(var)
 		result=[]
@@ -154,9 +160,7 @@ class HW3:
 			return [i/total for i in result]
 		factors=self.generate_factors(query)
 		for var in self.eliminatevars(query):
-			# print var,"wwww"
 			factors=self.sumout(var,factors)
-		# for f in factors: print f.var,f.p
 		return normalize(reduce(self.pointwise_product,factors).p)
 	def sumout(self,var,factors):
 		'''
@@ -171,7 +175,6 @@ class HW3:
 		'''
 		factor_list=[f for f in factors if var in f.var]
 		factor=reduce(self.pointwise_product,factor_list)
-		# print factor.var ,factor.p,"!!!!!!"
 		new_factor=Factor()
 		new_factor.var=[v for v in factor.var if not v==var]
 		index=factor.var.index(var)
@@ -183,7 +186,6 @@ class HW3:
 				if j!=index:
 					n=(n<<1)+(1&(i>>(len(factor.var)-1-j)))	
 			new_factor.p[n]+=p
-		# print new_factor.var,new_factor.p,"****"
 		return [f for f in factors if var not in f.var ]+[new_factor]	
 	def pointwise_product(self,*factors):
 		'''
@@ -205,12 +207,9 @@ class HW3:
 			new_factor.p.append(a.p[index(var,a.var,i)]*b.p[index(var,b.var,i)])
 		return new_factor
 	def generate_factors(self,query):
-		'''
 
-		'''
 		factors=[]
 		for var in self.bn.vars:
-			# print var, "aaa"
 			f=Factor()
 			if query["evidence"]:
 				f.var=[v for v in self.bn.parents[var]+[var] if v not in query["evidence"].keys()]
@@ -232,9 +231,7 @@ class HW3:
 				 		f.p.append(self.bn.cpt[var][index] if query["query"][var] else 1-self.bn.cpt[var][index])
 				 	else: f.p.append(self.bn.cpt[var][index] if query["evidence"][var] else 1-self.bn.cpt[var][index])
 				else:
-					# print f.var
 					f.p.append(self.bn.cpt[var][index] if 1&(i>>(len(f.var)-1-f.var.index(var)))  else 1-self.bn.cpt[var][index])
-			# print var,f.var, f.p
 			factors.append(f)
 		return factors	
 	def eliminatevars(self,query):
@@ -254,6 +251,5 @@ class Factor:
 		self.p=[]		
 if __name__=="__main__":
 	if len(sys.argv)!=3 or sys.argv[1]!="-i":
-		# print "input error"
 		sys.exit()
 	bn= HW3(sys.argv[2])
